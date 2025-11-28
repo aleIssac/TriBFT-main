@@ -1,0 +1,55 @@
+{
+  "_comment": "TriBFT Pipeline - Quick Test Config (Smaller Dataset)",
+
+  "ConsensusMethod": 4,
+  
+  "PbftViewChangeTimeOut": 6000,
+
+  "ExpDataRootDir": "expTest_tribft_pipeline",
+
+  "Block_Interval": 0,
+
+  "BlockSize": 2000,
+  "BlocksizeInBytes": 409600,
+  "UseBlocksizeInBytes": 1,
+
+  "InjectSpeed": 5000,
+  "TotalDataSize": 50000,
+  "TxBatchSize": 10000,
+
+  "BrokerNum": 10,
+  "RelayWithMerkleProof": 0,
+  
+  "DatasetFile": "./selectedTxs_300K.csv",
+  "ReconfigTimeGap": 50,
+
+  "Delay": 80,
+  "JitterRange": 60,
+  "Bandwidth": 10000000,
+
+  "_tribft_comment": "TriBFT Pipeline Test - Faster Injection",
+  "TriBFT": {
+    "HotStuffViewTimeout": 10000,
+    "HotStuffDelta": 150,
+    "QuorumRatio": 0.67,
+    "InitialReputation": 0.05,
+    "TrustedThreshold": 0.8,
+    "CandidateThreshold": 0.2,
+    "CredentialAggregationPeriod": 10,
+    "IntraShardBaseDelay": 30,
+    "IntraShardJitterRange": 20,
+    "ShardToCityBaseDelay": 50,
+    "ShardToCityJitterRange": 40,
+    "CityToGlobalBaseDelay": 80,
+    "CityToGlobalJitterRange": 60,
+    "GlobalToShardBaseDelay": 100,
+    "GlobalToShardJitterRange": 80
+  },
+
+  "_test_notes": [
+    "BlocksizeInBytes=409600: 400KB = ~2000 txs (smaller for faster test)",
+    "InjectSpeed=5000: Faster injection (5000 tx/s)",
+    "TotalDataSize=50000: Smaller dataset for quick test"
+  ]
+}
+

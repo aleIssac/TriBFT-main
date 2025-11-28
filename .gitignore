@@ -1,0 +1,59 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+tribft
+tribft_pipeline
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dataset files
+*.csv
+
+# Experiment data and logs
+expTest_tribft/
+expTest_tribft_pipeline/
+performance_data/
+
+# Log files
+*.log
+*.txt
+!LICENSE.txt
+
+# Database files
+*.db
+*.ldb
+database/
+mptDB/
+chainDB/
+
+# Config backup
+paramsConfig_backup.json
+
+# Temporary files
+*.tmp
+*.temp
