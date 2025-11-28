@@ -83,5 +83,3 @@ This project is licensed under the BSD 2-Clause License - see the [LICENSE](LICE
 For questions about this project, please contact the authors.
 
 ---
-
-**Note**: This is a preview version. Full implementation will be released after project completion.
