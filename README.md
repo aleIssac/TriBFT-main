@@ -1,6 +1,6 @@
 # TriBFT Consensus Framework
 
-A high-performance Byzantine Fault Tolerant (BFT) consensus framework featuring dynamic sharding and reputation-based auditing mechanisms for Industrial Internet of Things (IIoT) environments.
+A highly scalable Byzantine fault-tolerant consensus framework that provides a three-layer architecture for vehicular network blockchain and vehicular reputation evaluation model for large-scale vehicular networking.
 
 ## ⚠️ Notice
 
@@ -8,7 +8,7 @@ This repository contains the **core module code** for the paper:
 
 > **TriBFT-IoV: A Trustworthy Consensus System Based on Adaptive Three-Layer Architecture for Large-Scale Internet of Vehicles**
 
-The code is provided for **academic review purposes only**. Core implementation details are intentionally hidden and will be released after project completion.
+The code is provided for **academic review purposes only**. 
 
 **This project is developed based on [BlockEmulator](https://github.com/HuangLab-SYSU/block-emulator). A complete runtime environment requires integration with BlockEmulator.**
 
