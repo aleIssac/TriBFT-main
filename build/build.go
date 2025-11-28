@@ -1,7 +1,6 @@
 package build
 
 import (
-	"blockEmulator/consensus_shard/pbft_all"
 	"blockEmulator/consensus_shard/tribft"
 	"blockEmulator/networks"
 	"blockEmulator/params"
@@ -66,26 +65,24 @@ func BuildSupervisor(nnm, snm uint64) {
 func BuildNewPbftNode(nid, nnm, sid, snm uint64) {
 	methodID := params.ConsensusMethod
 
-	// 如果是 TriBFT，使用专门的构建函数
+	// TriBFT uses dedicated build function
 	if methodID == params.ConsensusTriBFT {
 		BuildTriBFTNode(nid, nnm, sid, snm)
 		return
 	}
 
-	// 否则使用原有的 PBFT
-	worker := pbft_all.NewPbftNode(sid, nid, initConfig(nid, nnm, sid, snm), params.CommitteeMethod[methodID])
-	go worker.TcpListen()
-	worker.Propose()
+	// TODO: PBFT implementation removed - only TriBFT is supported
+	panic("PBFT not available - only TriBFT consensus is supported in this version")
 }
 
-// BuildTriBFTNode 构建 TriBFT 节点
+// BuildTriBFTNode builds a TriBFT node
 func BuildTriBFTNode(nid, nnm, sid, snm uint64) {
-	// 读取 IP 表
+	// Read IP table
 	ipMap := readIpTable("./ipTable.json")
 	params.IPmap_nodeTable = ipMap
 	params.SupervisorAddr = params.IPmap_nodeTable[params.SupervisorShard][0]
 
-	// 检查参数正确性
+	// Check parameter correctness
 	if len(ipMap)-1 < int(snm) {
 		log.Panicf("Input ShardNumber = %d, but only %d shards in ipTable.json.\n", snm, len(ipMap)-1)
 	}
@@ -98,21 +95,21 @@ func BuildTriBFTNode(nid, nnm, sid, snm uint64) {
 	params.NodesInShard = int(nnm)
 	params.ShardNum = int(snm)
 
-	// 初始化网络层
+	// Initialize network layer
 	networks.InitNetworkTools()
 
-	// 创建 TriBFT 配置
+	// Create TriBFT configuration
 	config := params.NewTriBFTConfig(nid, nnm, sid, snm)
 
-	// 创建 TriBFT 节点
+	// Create TriBFT node
 	node := tribft.NewTriBFTNode(config)
 
-	// 启动 TCP 监听
+	// Start TCP listener
 	go node.TcpListen()
 
-	// 等待其他节点启动
+	// Wait for other nodes to start
 	time.Sleep(5 * time.Second)
 
-	// 启动共识
+	// Start consensus
 	node.StartConsensus()
 }

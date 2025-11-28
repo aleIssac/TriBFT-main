@@ -8,15 +8,15 @@ import (
 	"github.com/vechain/go-ecvrf"
 )
 
-// VRFResult 包含 VRF 方法的输出结果
+// VRFResult contains VRF method output results
 type VRFResult struct {
-	Proof       []byte // VRF 证明
-	RandomValue []byte // 随机数
+	Proof       []byte // VRF proof
+	RandomValue []byte // Random value
 }
 
-// GenerateVRF 使用私钥进行 VRF 计算
+// GenerateVRF performs VRF computation using private key
 //
-// VRF算法：采用第三方库ecvrf
+// VRF algorithm: uses third-party library ecvrf
 func GenerateVRF(privateKey *ecdsa.PrivateKey, input []byte) *VRFResult {
 	output, proof, err := ecvrf.Secp256k1Sha256Tai.Prove(privateKey, input)
 	if err != nil {
@@ -28,9 +28,9 @@ func GenerateVRF(privateKey *ecdsa.PrivateKey, input []byte) *VRFResult {
 	}
 }
 
-// VerifyVRF 使用公钥进行 VRF 结果验证
+// VerifyVRF verifies VRF result using public key
 //
-// VRF算法：采用第三方库ecvrf
+// VRF algorithm: uses third-party library ecvrf
 func VerifyVRF(publicKey *ecdsa.PublicKey, input []byte, vrfResult *VRFResult) bool {
 	output, err := ecvrf.Secp256k1Sha256Tai.Verify(publicKey, input, vrfResult.Proof)
 	if err != nil {

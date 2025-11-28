@@ -2,59 +2,59 @@ package params
 
 import "math/big"
 
-// TriBFT 共识方法 ID
+// TriBFT consensus method ID
 const ConsensusTriBFT = 4
 
-// TriBFT 分层架构配置
+// TriBFT hierarchical architecture configuration
 var (
-	// 分片配置
-	RegionalShardNum = 16 // 区域分片数量
-	CityClusterNum   = 4  // 城市集群数量（虚拟层）
+	// Shard configuration
+	RegionalShardNum = 16 // Number of regional shards
+	CityClusterNum   = 4  // Number of city clusters (virtual layer)
 
-	// 动态分片阈值
-	ShardSplitThreshold = 100 // 节点数超过此值触发拆分
-	ShardMergeThreshold = 20  // 节点数低于此值触发合并
+	// Dynamic sharding thresholds
+	ShardSplitThreshold = 100 // Trigger split when node count exceeds this value
+	ShardMergeThreshold = 20  // Trigger merge when node count falls below this value
 
-	// VRM 信誉配置
-	InitialReputation     = 0.05  // 初始信誉分
-	ReputationDecayLambda = 0.995 // 衰减系数 λ
-	TrustedThreshold      = 0.8   // 可信级阈值
-	CandidateThreshold    = 0.2   // 候选级阈值
-	WeightDecayRate       = 0.01  // 动态权重衰减率 α
+	// VRM reputation configuration
+	InitialReputation     = 0.05  // Initial reputation score
+	ReputationDecayLambda = 0.995 // Decay coefficient lambda
+	TrustedThreshold      = 0.8   // Trusted level threshold
+	CandidateThreshold    = 0.2   // Candidate level threshold
+	WeightDecayRate       = 0.01  // Dynamic weight decay rate alpha
 
-	// HotStuff 配置
-	HotStuffViewTimeout = 6000 // 视图超时 (ms)
-	HotStuffDelta       = 150  // 网络延迟上界 δ (ms)
-	QuorumRatio         = 0.67 // 法定人数比例 (2f+1)/N
+	// HotStuff configuration
+	HotStuffViewTimeout = 6000 // View timeout (ms)
+	HotStuffDelta       = 150  // Network delay upper bound delta (ms)
+	QuorumRatio         = 0.67 // Quorum ratio (2f+1)/N
 
-	// 冗余节点配置
-	BackupNodeRatio    = 0.3  // 冗余节点比例
-	BackupSyncInterval = 1000 // 冗余节点同步间隔 (ms)
+	// Backup node configuration
+	BackupNodeRatio    = 0.3  // Backup node ratio
+	BackupSyncInterval = 1000 // Backup node sync interval (ms)
 
-	// 凭证聚合周期
-	CredentialAggregationPeriod = 10 // 每 N 个区块聚合一次凭证
+	// Credential aggregation period
+	CredentialAggregationPeriod = 10 // Aggregate credentials every N blocks
 
-	// 分层通信延迟配置（毫秒）
-	IntraShardBaseDelay      = 30  // 分片内基础延迟
-	IntraShardJitterRange    = 20  // 分片内抖动范围
-	ShardToCityBaseDelay     = 50  // 分片到城市基础延迟
-	ShardToCityJitterRange   = 40  // 分片到城市抖动范围
-	CityToGlobalBaseDelay    = 80  // 城市到全局基础延迟
-	CityToGlobalJitterRange  = 60  // 城市到全局抖动范围
-	GlobalToShardBaseDelay   = 100 // 全局到分片基础延迟
-	GlobalToShardJitterRange = 80  // 全局到分片抖动范围
+	// Inter-layer communication delay configuration (milliseconds)
+	IntraShardBaseDelay      = 30  // Intra-shard base delay
+	IntraShardJitterRange    = 20  // Intra-shard jitter range
+	ShardToCityBaseDelay     = 50  // Shard to city base delay
+	ShardToCityJitterRange   = 40  // Shard to city jitter range
+	CityToGlobalBaseDelay    = 80  // City to global base delay
+	CityToGlobalJitterRange  = 60  // City to global jitter range
+	GlobalToShardBaseDelay   = 100 // Global to shard base delay
+	GlobalToShardJitterRange = 80  // Global to shard jitter range
 
-	// 是否启用延迟日志
+	// Enable layer delay logging
 	EnableLayerDelayLogging = false
 )
 
-// ShardLevel 分片层级
+// ShardLevel Shard level
 type ShardLevel uint8
 
 const (
-	ShardLevelRegional ShardLevel = iota // 区域分片
-	ShardLevelCity                       // 城市集群
-	ShardLevelGlobal                     // 全局分片
+	ShardLevelRegional ShardLevel = iota // Regional shard
+	ShardLevelCity                       // City cluster
+	ShardLevelGlobal                     // Global shard
 )
 
 func (sl ShardLevel) String() string {
@@ -70,14 +70,14 @@ func (sl ShardLevel) String() string {
 	}
 }
 
-// LayerCommunicationType 层间通信类型
+// LayerCommunicationType Inter-layer communication type
 type LayerCommunicationType uint8
 
 const (
-	CommIntraShard    LayerCommunicationType = iota // 分片内通信
-	CommShardToCity                                 // 分片到城市
-	CommCityToGlobal                                // 城市到全局
-	CommGlobalToShard                               // 全局到分片
+	CommIntraShard    LayerCommunicationType = iota // Intra-shard communication
+	CommShardToCity                                 // Shard to city
+	CommCityToGlobal                                // City to global
+	CommGlobalToShard                               // Global to shard
 )
 
 func (lct LayerCommunicationType) String() string {
@@ -95,7 +95,7 @@ func (lct LayerCommunicationType) String() string {
 	}
 }
 
-// TriBFTConfig TriBFT 链配置
+// TriBFTConfig TriBFT chain configuration
 type TriBFTConfig struct {
 	ChainID    uint64
 	NodeID     uint64
@@ -109,16 +109,16 @@ type TriBFTConfig struct {
 	BlockInterval uint64
 	InjectSpeed   uint64
 
-	// TriBFT 特有
-	IsRSU         bool   // 是否为 RSU 节点（高稳定性节点）
-	IsAnchor      bool   // 是否为锚点 RSU
-	ParentShardID uint64 // 父分片 ID（城市或全局）
+	// TriBFT specific
+	IsRSU         bool   // Whether this is an RSU node (high stability node)
+	IsAnchor      bool   // Whether this is an anchor RSU
+	ParentShardID uint64 // Parent shard ID (city or global)
 
-	// 初始余额
+	// Initial balance
 	Init_Balance *big.Int
 }
 
-// NewTriBFTConfig 创建 TriBFT 配置
+// NewTriBFTConfig creates a TriBFT configuration
 func NewTriBFTConfig(nodeID, nodesPerShard, shardID, shardNums uint64) *TriBFTConfig {
 	return &TriBFTConfig{
 		ChainID:        shardID,
@@ -130,7 +130,7 @@ func NewTriBFTConfig(nodeID, nodesPerShard, shardID, shardNums uint64) *TriBFTCo
 		BlockSize:      uint64(MaxBlockSize_global),
 		BlockInterval:  uint64(Block_Interval),
 		InjectSpeed:    uint64(InjectSpeed),
-		IsRSU:          false, // 默认为普通节点
+		IsRSU:          false, // Default is normal node
 		IsAnchor:       false,
 		ParentShardID:  0,
 		Init_Balance:   Init_Balance,

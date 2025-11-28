@@ -29,18 +29,18 @@ var fileUpToDataSet = make(map[string]struct{})
 
 func attachLineToFile(filePath string, line string) error {
 	if _, exist := fileUpToDataSet[filePath]; !exist {
-		// 尝试删除旧文件，如果不存在则忽略错误
-		os.Remove(filePath) // 忽略错误，文件可能不存在
+		// Try to delete old file, ignore error if file doesn't exist
+		os.Remove(filePath) // Ignore error, file may not exist
 		fileUpToDataSet[filePath] = struct{}{}
 	}
-	// 以追加模式打开文件，如果文件不存在则创建
+	// Open file in append mode, create if not exists
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
-	defer file.Close() // 确保函数结束时关闭文件
+	defer file.Close() // Ensure file is closed when function ends
 
-	// 写入文件的内容，附加一个换行符
+	// Write content to file, append a newline
 	if _, err := file.WriteString(line + "\n"); err != nil {
 		return err
 	}

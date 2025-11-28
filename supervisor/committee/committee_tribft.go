@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// TriBFTCommitteeModule TriBFT 委员会模块（简单的交易注入）
+// TriBFTCommitteeModule TriBFT committee module (simple transaction injection)
 type TriBFTCommitteeModule struct {
 	csvPath      string
 	dataTotalNum int
@@ -28,7 +28,7 @@ type TriBFTCommitteeModule struct {
 	Ss           *signal.StopSignal // to control the stop message sending
 }
 
-// NewTriBFTCommitteeModule 创建 TriBFT 委员会模块
+// NewTriBFTCommitteeModule creates a TriBFT committee module
 func NewTriBFTCommitteeModule(Ip_nodeTable map[uint64]map[uint64]string, Ss *signal.StopSignal, slog *supervisor_log.SupervisorLog, csvFilePath string, dataNum, batchNum int) *TriBFTCommitteeModule {
 	return &TriBFTCommitteeModule{
 		csvPath:      csvFilePath,
@@ -43,7 +43,7 @@ func NewTriBFTCommitteeModule(Ip_nodeTable map[uint64]map[uint64]string, Ss *sig
 
 func (tcm *TriBFTCommitteeModule) HandleOtherMessage([]byte) {}
 
-// txSending 发送交易到各个分片
+// txSending sends transactions to each shard
 func (tcm *TriBFTCommitteeModule) txSending(txlist []*core.Transaction) {
 	sendToShard := make(map[uint64][]*core.Transaction)
 
@@ -74,7 +74,7 @@ func (tcm *TriBFTCommitteeModule) txSending(txlist []*core.Transaction) {
 	}
 }
 
-// MsgSendingControl 读取交易并发送
+// MsgSendingControl reads transactions and sends them
 func (tcm *TriBFTCommitteeModule) MsgSendingControl() {
 	tcm.sl.Slog.Println("TriBFT Committee: Starting transaction injection...")
 
@@ -95,7 +95,7 @@ func (tcm *TriBFTCommitteeModule) MsgSendingControl() {
 			log.Panic(err)
 		}
 
-		// 将CSV数据转换为交易
+		// Convert CSV data to transaction
 		if tx, ok := tcm.parseTransaction(data, uint64(tcm.nowDataNum)); ok {
 			txlist = append(txlist, tx)
 			tcm.nowDataNum++
@@ -120,7 +120,7 @@ func (tcm *TriBFTCommitteeModule) MsgSendingControl() {
 	tcm.sl.Slog.Println("TriBFT Committee: Transaction injection complete")
 }
 
-// parseTransaction 将CSV数据转换为交易
+// parseTransaction converts CSV data to transaction
 func (tcm *TriBFTCommitteeModule) parseTransaction(data []string, nonce uint64) (*core.Transaction, bool) {
 	if data[6] == "0" && data[7] == "0" && len(data[3]) > 16 && len(data[4]) > 16 && data[3] != data[4] {
 		val, ok := new(big.Int).SetString(data[8], 10)
@@ -133,7 +133,7 @@ func (tcm *TriBFTCommitteeModule) parseTransaction(data []string, nonce uint64) 
 	return &core.Transaction{}, false
 }
 
-// HandleBlockInfo 处理区块信息（TriBFT 不需要特殊处理）
+// HandleBlockInfo handles block information (TriBFT doesn't need special handling)
 func (tcm *TriBFTCommitteeModule) HandleBlockInfo(b *message.BlockInfoMsg) {
 	tcm.sl.Slog.Printf("TriBFT Committee: Received block info from shard %d in epoch %d.\n", b.SenderShardID, b.Epoch)
 }

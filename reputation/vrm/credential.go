@@ -6,40 +6,40 @@ import (
 	"sync"
 )
 
-// BehaviorCredential 行为凭证
-// 记录节点的行为事件，用于信誉更新
+// BehaviorCredential behavior credential
+// Records node behavior events for reputation updates
 type BehaviorCredential struct {
-	NodeID       uint64       // 节点 ID
-	ShardID      uint64       // 分片 ID
-	BehaviorType BehaviorType // 行为类型
-	Timestamp    int64        // 时间戳
-	BlockHeight  uint64       // 所在区块高度
-	Evidence     []byte       // 行为证据（如交易哈希、签名等）
-	Signature    []byte       // 凭证签名
+	NodeID       uint64       // Node ID
+	ShardID      uint64       // Shard ID
+	BehaviorType BehaviorType // Behavior type
+	Timestamp    int64        // Timestamp
+	BlockHeight  uint64       // Block height where behavior occurred
+	Evidence     []byte       // Behavior evidence (e.g., transaction hash, signature)
+	Signature    []byte       // Credential signature
 }
 
-// CredentialBatch 凭证批次
-// 多个凭证的聚合，用于向上层提交
+// CredentialBatch credential batch
+// Aggregation of multiple credentials for submission to upper layer
 type CredentialBatch struct {
-	ShardID     uint64                // 分片 ID
-	EpochID     uint64                // 周期 ID
-	Credentials []*BehaviorCredential // 凭证列表
-	BatchHash   []byte                // 批次哈希
-	BlockHeight uint64                // 聚合时的区块高度
+	ShardID     uint64                // Shard ID
+	EpochID     uint64                // Epoch ID
+	Credentials []*BehaviorCredential // Credential list
+	BatchHash   []byte                // Batch hash
+	BlockHeight uint64                // Block height at aggregation
 }
 
-// CredentialManager 凭证管理器
+// CredentialManager credential manager
 type CredentialManager struct {
 	mu sync.RWMutex
 
-	// 待聚合的凭证池（按分片组织）
+	// Pending credentials pool (organized by shard)
 	pendingCredentials map[uint64][]*BehaviorCredential
 
-	// 已聚合的批次
+	// Aggregated batches
 	aggregatedBatches map[uint64][]*CredentialBatch
 }
 
-// NewCredentialManager 创建凭证管理器
+// NewCredentialManager creates a credential manager
 func NewCredentialManager() *CredentialManager {
 	return &CredentialManager{
 		pendingCredentials: make(map[uint64][]*BehaviorCredential),
@@ -47,7 +47,7 @@ func NewCredentialManager() *CredentialManager {
 	}
 }
 
-// AddCredential 添加行为凭证
+// AddCredential adds a behavior credential
 func (cm *CredentialManager) AddCredential(cred *BehaviorCredential) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -58,7 +58,7 @@ func (cm *CredentialManager) AddCredential(cred *BehaviorCredential) {
 	)
 }
 
-// GetPendingCredentials 获取待聚合的凭证
+// GetPendingCredentials gets pending credentials for aggregation
 func (cm *CredentialManager) GetPendingCredentials(shardID uint64) []*BehaviorCredential {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
@@ -66,7 +66,7 @@ func (cm *CredentialManager) GetPendingCredentials(shardID uint64) []*BehaviorCr
 	return cm.pendingCredentials[shardID]
 }
 
-// AggregatePendingCredentials 聚合待处理凭证
+// AggregatePendingCredentials aggregates pending credentials
 func (cm *CredentialManager) AggregatePendingCredentials(
 	shardID, blockHeight uint64,
 ) *CredentialBatch {
@@ -78,30 +78,30 @@ func (cm *CredentialManager) AggregatePendingCredentials(
 		return nil
 	}
 
-	// 创建批次
+	// Create batch
 	batch := &CredentialBatch{
 		ShardID:     shardID,
-		EpochID:     blockHeight / 10, // 每10个区块一个epoch
+		EpochID:     blockHeight / 10, // One epoch per 10 blocks
 		Credentials: creds,
 		BlockHeight: blockHeight,
 	}
 
-	// 计算批次哈希
+	// Compute batch hash
 	batch.BatchHash = cm.computeBatchHash(batch)
 
-	// 存储已聚合的批次
+	// Store aggregated batch
 	cm.aggregatedBatches[shardID] = append(
 		cm.aggregatedBatches[shardID],
 		batch,
 	)
 
-	// 清空待聚合池
+	// Clear pending pool
 	cm.pendingCredentials[shardID] = nil
 
 	return batch
 }
 
-// GetAggregatedBatches 获取已聚合的批次
+// GetAggregatedBatches gets aggregated batches
 func (cm *CredentialManager) GetAggregatedBatches(shardID uint64) []*CredentialBatch {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
@@ -109,7 +109,7 @@ func (cm *CredentialManager) GetAggregatedBatches(shardID uint64) []*CredentialB
 	return cm.aggregatedBatches[shardID]
 }
 
-// ClearAggregatedBatches 清空已聚合的批次
+// ClearAggregatedBatches clears aggregated batches
 func (cm *CredentialManager) ClearAggregatedBatches(shardID uint64) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -117,7 +117,7 @@ func (cm *CredentialManager) ClearAggregatedBatches(shardID uint64) {
 	cm.aggregatedBatches[shardID] = nil
 }
 
-// computeBatchHash 计算批次哈希
+// computeBatchHash computes batch hash
 func (cm *CredentialManager) computeBatchHash(batch *CredentialBatch) []byte {
 	hasher := sha256.New()
 
@@ -128,7 +128,7 @@ func (cm *CredentialManager) computeBatchHash(batch *CredentialBatch) []byte {
 	// BlockHeight
 	binary.Write(hasher, binary.BigEndian, batch.BlockHeight)
 
-	// 每个凭证的关键字段
+	// Key fields from each credential
 	for _, cred := range batch.Credentials {
 		binary.Write(hasher, binary.BigEndian, cred.NodeID)
 		binary.Write(hasher, binary.BigEndian, uint8(cred.BehaviorType))
@@ -139,7 +139,7 @@ func (cm *CredentialManager) computeBatchHash(batch *CredentialBatch) []byte {
 	return hasher.Sum(nil)
 }
 
-// VerifyBatchHash 验证批次哈希
+// VerifyBatchHash verifies batch hash
 func (cm *CredentialManager) VerifyBatchHash(batch *CredentialBatch) bool {
 	expectedHash := cm.computeBatchHash(batch)
 
@@ -156,7 +156,7 @@ func (cm *CredentialManager) VerifyBatchHash(batch *CredentialBatch) bool {
 	return true
 }
 
-// GetCredentialCount 获取待聚合凭证数量
+// GetCredentialCount gets the count of pending credentials
 func (cm *CredentialManager) GetCredentialCount(shardID uint64) int {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()

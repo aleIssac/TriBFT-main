@@ -39,7 +39,7 @@ func NewVrfAccount(nodeDatadir string) *VrfAccount {
 }
 
 func newPrivateKey() *ecdsa.PrivateKey {
-	// 选择椭圆曲线，这里选择 secp256k1 曲线
+	// Select elliptic curve, using secp256k1 curve
 	s, err := secp256k1.GeneratePrivateKey()
 	if err != nil {
 		log.Error("generate private key fail", "err", err)
@@ -57,12 +57,11 @@ func (vrfAccount *VrfAccount) SignHash(hash []byte) []byte {
 	return sig
 }
 
-/*
-这个方法是被该账户以外的其他账户调用，以验证签名的正确性的
-所以不能直接获取公钥和地址，要从签名中恢复
-*/
+// VerifySignature verifies signature correctness
+// This method is called by accounts other than the signer to verify signature
+// Cannot directly get public key and address, need to recover from signature
 func VerifySignature(msgHash []byte, sig []byte, expected_addr common.Address) bool {
-	// 恢复公钥
+	// Recover public key
 	pubKeyBytes, err := crypto.Ecrecover(msgHash, sig)
 	if err != nil {
 		log.Error("ecrecover fail", "err", err)
@@ -79,7 +78,7 @@ func VerifySignature(msgHash []byte, sig []byte, expected_addr common.Address) b
 	return recovered_addr == expected_addr
 }
 
-/* 接收一个随机种子，用私钥生成一个随机数输出和对应的证明 */
+// GenerateVRFOutput receives a random seed, uses private key to generate random output and corresponding proof
 func (vrfAccount *VrfAccount) GenerateVRFOutput(randSeed []byte) *VRFResult {
 	// vrfResult := utils.GenerateVRF(vrfAccount.privateKey, randSeed)
 	sig := vrfAccount.SignHash(randSeed)
@@ -90,7 +89,7 @@ func (vrfAccount *VrfAccount) GenerateVRFOutput(randSeed []byte) *VRFResult {
 	return vrfResult
 }
 
-/* 接收随机数输出和对应证明，用公钥验证该随机数输出是否合法 */
+// VerifyVRFOutput receives random output and proof, uses public key to verify if the random output is valid
 func (vrfAccount *VrfAccount) VerifyVRFOutput(vrfResult *VRFResult, randSeed []byte) bool {
 	// return utils.VerifyVRF(vrfAccount.pubKey, randSeed, vrfResult)
 	return VerifySignature(randSeed, vrfResult.RandomValue, common.BytesToAddress(vrfResult.Proof))
@@ -105,9 +104,8 @@ func (vrfAccount *VrfAccount) GetAccountAddress() *common.Address {
 	return &vrfAccount.accountAddr
 }
 
-/** 先将结构体进行rlp编码，再哈希
- * 注意: !!!结构体中不能存在int类型的变量！！！
- */
+// rlpHash first RLP encodes the struct, then hashes it
+// Note: struct must NOT contain int type variables!
 func rlpHash(x interface{}) (h common.Hash, err error) {
 	sha := hasherPool.Get().(crypto.KeccakState)
 	defer hasherPool.Put(sha)

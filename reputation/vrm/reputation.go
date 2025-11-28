@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-// ReputationLevel 信誉等级
+// ReputationLevel reputation level
 type ReputationLevel uint8
 
 const (
-	LevelQuarantined ReputationLevel = iota // 隔离级 R=0
-	LevelCandidate                          // 候选级 0<R<0.2
-	LevelStandard                           // 标准级 0.2≤R<0.8
-	LevelTrusted                            // 可信级 0.8≤R≤1.0
+	LevelQuarantined ReputationLevel = iota // Quarantined level R=0
+	LevelCandidate                          // Candidate level 0<R<0.2
+	LevelStandard                           // Standard level 0.2≤R<0.8
+	LevelTrusted                            // Trusted level 0.8≤R≤1.0
 )
 
 func (rl ReputationLevel) String() string {
@@ -32,19 +32,19 @@ func (rl ReputationLevel) String() string {
 	}
 }
 
-// BehaviorType 行为类型
+// BehaviorType behavior type
 type BehaviorType uint8
 
 const (
-	// 恶意行为 (Category 0)
-	BehaviorMaliciousConsensus BehaviorType = iota // 严重共识作恶 δ=0.8
-	BehaviorFalseData                              // 虚假信息 δ=0.5
-	BehaviorUnexpectedOffline                      // 意外离线 δ=0.1
+	// Malicious behaviors (Category 0)
+	BehaviorMaliciousConsensus BehaviorType = iota // Severe consensus attack δ=0.8
+	BehaviorFalseData                              // False information δ=0.5
+	BehaviorUnexpectedOffline                      // Unexpected offline δ=0.1
 
-	// 积极行为 (Category 1)
-	BehaviorConsensusSuccess // 成功参与共识 δ=0.05
-	BehaviorDataVerified     // 数据被证实 δ=0.01
-	BehaviorVerifyOthers     // 验证他人数据 δ=0.005
+	// Positive behaviors (Category 1)
+	BehaviorConsensusSuccess // Successfully participated in consensus δ=0.05
+	BehaviorDataVerified     // Data verified δ=0.01
+	BehaviorVerifyOthers     // Verified others' data δ=0.005
 )
 
 func (bt BehaviorType) String() string {
@@ -66,38 +66,38 @@ func (bt BehaviorType) String() string {
 	}
 }
 
-// ReputationScore 信誉分数
+// ReputationScore reputation score
 type ReputationScore struct {
-	Score             float64         // 信誉分 [0, 1]
-	Level             ReputationLevel // 信誉等级
-	LocalInteractions uint64          // 本地交互次数（仅本地信誉有效）
-	LastActiveTime    int64           // 最后活跃时间（Unix 时间戳）
-	LastUpdateTime    int64           // 最后更新时间
+	Score             float64         // Reputation score [0, 1]
+	Level             ReputationLevel // Reputation level
+	LocalInteractions uint64          // Local interaction count (only valid for local reputation)
+	LastActiveTime    int64           // Last active time (Unix timestamp)
+	LastUpdateTime    int64           // Last update time
 }
 
-// ReputationManager VRM 信誉管理器
+// ReputationManager VRM reputation manager
 type ReputationManager struct {
 	Mu sync.RWMutex
 
-	// 全局信誉存储 nodeID -> GlobalReputation
+	// Global reputation storage nodeID -> GlobalReputation
 	GlobalReps map[uint64]*ReputationScore
 
-	// 本地信誉存储 shardID -> nodeID -> LocalReputation
+	// Local reputation storage shardID -> nodeID -> LocalReputation
 	LocalReps map[uint64]map[uint64]*ReputationScore
 
-	// 配置参数
+	// Configuration parameters
 	Config *VRMConfig
 }
 
-// VRMConfig VRM 配置参数
+// VRMConfig VRM configuration parameters
 type VRMConfig struct {
-	InitialScore    float64                  // 初始信誉分
-	DecayLambda     float64                  // 衰减系数 λ
-	WeightDecayRate float64                  // 动态权重衰减率 α
-	BehaviorWeights map[BehaviorType]float64 // 行为权重映射
+	InitialScore    float64                  // Initial reputation score
+	DecayLambda     float64                  // Decay coefficient λ
+	WeightDecayRate float64                  // Dynamic weight decay rate α
+	BehaviorWeights map[BehaviorType]float64 // Behavior weight mapping
 }
 
-// NewReputationManager 创建信誉管理器
+// NewReputationManager creates a reputation manager
 func NewReputationManager(config *VRMConfig) *ReputationManager {
 	if config == nil {
 		config = DefaultVRMConfig()
@@ -110,7 +110,7 @@ func NewReputationManager(config *VRMConfig) *ReputationManager {
 	}
 }
 
-// GetFinalScore 计算最终信誉分
+// GetFinalScore computes the final reputation score
 // R_final = w * R_global + (1-w) * R_local
 // w = e^(-α * N_local)
 func (rm *ReputationManager) GetFinalScore(nodeID, shardID uint64) float64 {
@@ -124,32 +124,32 @@ func (rm *ReputationManager) GetFinalScore(nodeID, shardID uint64) float64 {
 
 	localRep := rm.getLocalRep(shardID, nodeID)
 	if localRep == nil {
-		// 新节点加入分片，仅使用全局信誉
+		// New node joining shard, use only global reputation
 		return globalRep.Score
 	}
 
-	// 计算动态权重：w = e^(-α * N_local)
+	// Compute dynamic weight: w = e^(-α * N_local)
 	w := math.Exp(-rm.Config.WeightDecayRate * float64(localRep.LocalInteractions))
 
-	// 加权平均
+	// Weighted average
 	finalScore := w*globalRep.Score + (1-w)*localRep.Score
 
 	return finalScore
 }
 
-// GetReputationLevel 获取信誉等级
+// GetReputationLevel gets the reputation level
 func (rm *ReputationManager) GetReputationLevel(nodeID, shardID uint64) ReputationLevel {
 	score := rm.GetFinalScore(nodeID, shardID)
 	return rm.scoreToLevel(score)
 }
 
-// IsTrusted 判断是否为可信节点
+// IsTrusted checks if a node is trusted
 func (rm *ReputationManager) IsTrusted(nodeID, shardID uint64) bool {
 	return rm.GetReputationLevel(nodeID, shardID) == LevelTrusted
 }
 
-// UpdateReputation 更新信誉（核心算法）
-// 同时更新全局信誉和本地信誉
+// UpdateReputation updates reputation (core algorithm)
+// Updates both global and local reputation
 func (rm *ReputationManager) UpdateReputation(
 	nodeID, shardID uint64,
 	behavior BehaviorType,
@@ -157,27 +157,27 @@ func (rm *ReputationManager) UpdateReputation(
 	rm.Mu.Lock()
 	defer rm.Mu.Unlock()
 
-	// 获取或创建信誉记录
+	// Get or create reputation record
 	globalRep := rm.getOrCreateGlobalRep(nodeID)
 	localRep := rm.getOrCreateLocalRep(shardID, nodeID)
 
-	// 获取行为权重
+	// Get behavior weight
 	baseWeight := rm.Config.BehaviorWeights[behavior]
 
-	// 根据行为类别选择更新策略
+	// Choose update strategy based on behavior category
 	if rm.IsPositiveBehavior(behavior) {
-		// 积极行为：边际效益递减
+		// Positive behavior: diminishing marginal returns
 		// R_new = R + δ * (1 - R)
 		globalRep.Score = rm.updatePositive(globalRep.Score, baseWeight)
 		localRep.Score = rm.updatePositive(localRep.Score, baseWeight)
 	} else {
-		// 消极行为：固定惩罚
+		// Negative behavior: fixed penalty
 		// R_new = (1 - δ) * R
 		globalRep.Score = rm.updateNegative(globalRep.Score, baseWeight)
 		localRep.Score = rm.updateNegative(localRep.Score, baseWeight)
 	}
 
-	// 更新元数据
+	// Update metadata
 	now := time.Now().Unix()
 	localRep.LocalInteractions++
 	globalRep.LastUpdateTime = now
@@ -185,12 +185,12 @@ func (rm *ReputationManager) UpdateReputation(
 	globalRep.LastActiveTime = now
 	localRep.LastActiveTime = now
 
-	// 更新等级
+	// Update level
 	globalRep.Level = rm.scoreToLevel(globalRep.Score)
 	localRep.Level = rm.scoreToLevel(localRep.Score)
 }
 
-// ApplyDecay 应用时间衰减
+// ApplyDecay applies time decay
 // R_new = R * λ^Δt
 func (rm *ReputationManager) ApplyDecay(nodeID uint64, deltaTime int64) {
 	rm.Mu.Lock()
@@ -201,15 +201,15 @@ func (rm *ReputationManager) ApplyDecay(nodeID uint64, deltaTime int64) {
 		return
 	}
 
-	// 计算衰减因子
+	// Compute decay factor
 	decayFactor := math.Pow(rm.Config.DecayLambda, float64(deltaTime))
 	rep.Score *= decayFactor
 
-	// 更新等级
+	// Update level
 	rep.Level = rm.scoreToLevel(rep.Score)
 }
 
-// GetGlobalReputation 获取全局信誉分
+// GetGlobalReputation gets global reputation score
 func (rm *ReputationManager) GetGlobalReputation(nodeID uint64) float64 {
 	rm.Mu.RLock()
 	defer rm.Mu.RUnlock()
@@ -220,7 +220,7 @@ func (rm *ReputationManager) GetGlobalReputation(nodeID uint64) float64 {
 	return rm.Config.InitialScore
 }
 
-// GetLocalReputation 获取本地信誉分
+// GetLocalReputation gets local reputation score
 func (rm *ReputationManager) GetLocalReputation(nodeID, shardID uint64) float64 {
 	rm.Mu.RLock()
 	defer rm.Mu.RUnlock()
@@ -232,26 +232,26 @@ func (rm *ReputationManager) GetLocalReputation(nodeID, shardID uint64) float64 
 	return localRep.Score
 }
 
-// --- 内部方法 ---
+// --- Internal methods ---
 
-// updatePositive 积极行为更新（边际效益递减）
+// updatePositive positive behavior update (diminishing marginal returns)
 func (rm *ReputationManager) updatePositive(score, weight float64) float64 {
 	newScore := score + weight*(1-score)
 	return math.Min(newScore, 1.0)
 }
 
-// updateNegative 消极行为更新（固定惩罚）
+// updateNegative negative behavior update (fixed penalty)
 func (rm *ReputationManager) updateNegative(score, weight float64) float64 {
 	newScore := (1 - weight) * score
 	return math.Max(newScore, 0.0)
 }
 
-// IsPositiveBehavior 判断是否为积极行为
+// IsPositiveBehavior checks if a behavior is positive
 func (rm *ReputationManager) IsPositiveBehavior(bt BehaviorType) bool {
 	return bt >= BehaviorConsensusSuccess
 }
 
-// scoreToLevel 信誉分转换为等级
+// scoreToLevel converts reputation score to level
 func (rm *ReputationManager) scoreToLevel(score float64) ReputationLevel {
 	switch {
 	case score == 0:
@@ -265,7 +265,7 @@ func (rm *ReputationManager) scoreToLevel(score float64) ReputationLevel {
 	}
 }
 
-// getOrCreateGlobalRep 获取或创建全局信誉记录
+// getOrCreateGlobalRep gets or creates global reputation record
 func (rm *ReputationManager) getOrCreateGlobalRep(nodeID uint64) *ReputationScore {
 	if rep, exists := rm.GlobalReps[nodeID]; exists {
 		return rep
@@ -281,7 +281,7 @@ func (rm *ReputationManager) getOrCreateGlobalRep(nodeID uint64) *ReputationScor
 	return rep
 }
 
-// getOrCreateLocalRep 获取或创建本地信誉记录
+// getOrCreateLocalRep gets or creates local reputation record
 func (rm *ReputationManager) getOrCreateLocalRep(shardID, nodeID uint64) *ReputationScore {
 	if _, exists := rm.LocalReps[shardID]; !exists {
 		rm.LocalReps[shardID] = make(map[uint64]*ReputationScore)
@@ -302,7 +302,7 @@ func (rm *ReputationManager) getOrCreateLocalRep(shardID, nodeID uint64) *Reputa
 	return rep
 }
 
-// getLocalRep 获取本地信誉记录（不创建）
+// getLocalRep gets local reputation record (without creating)
 func (rm *ReputationManager) getLocalRep(shardID, nodeID uint64) *ReputationScore {
 	if shardMap, exists := rm.LocalReps[shardID]; exists {
 		return shardMap[nodeID]
@@ -310,7 +310,7 @@ func (rm *ReputationManager) getLocalRep(shardID, nodeID uint64) *ReputationScor
 	return nil
 }
 
-// DefaultVRMConfig 返回默认配置
+// DefaultVRMConfig returns default configuration
 func DefaultVRMConfig() *VRMConfig {
 	return &VRMConfig{
 		InitialScore:    params.InitialReputation,
@@ -324,5 +324,16 @@ func DefaultVRMConfig() *VRMConfig {
 			BehaviorDataVerified:       0.01,
 			BehaviorVerifyOthers:       0.005,
 		},
+	}
+}
+
+// DefaultReputationScore returns default reputation score
+func DefaultReputationScore() *ReputationScore {
+	return &ReputationScore{
+		Score:             params.InitialReputation,
+		Level:             LevelCandidate,
+		LocalInteractions: 0,
+		LastActiveTime:    time.Now().Unix(),
+		LastUpdateTime:    time.Now().Unix(),
 	}
 }
